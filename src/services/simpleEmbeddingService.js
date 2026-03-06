@@ -53,7 +53,7 @@ class SimpleEmbeddingService {
   }
 
   async generateSimpleEmbedding(text) {
-    const words = text.toLowerCase().split(/\s+/);
+    const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 0);
     const embedding = new Array(this.dimensions).fill(0);
     
     for (let i = 0; i < words.length; i++) {
@@ -65,8 +65,20 @@ class SimpleEmbeddingService {
       }
     }
     
-    const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-    return embedding.map(val => val / magnitude);
+    // Normalize the embedding
+    let magnitude = 0;
+    for (let j = 0; j < this.dimensions; j++) {
+      magnitude += embedding[j] * embedding[j];
+    }
+    magnitude = Math.sqrt(magnitude);
+    
+    if (magnitude > 0) {
+      for (let j = 0; j < this.dimensions; j++) {
+        embedding[j] = embedding[j] / magnitude;
+      }
+    }
+    
+    return embedding;
   }
 
   hashWord(word) {
@@ -76,7 +88,7 @@ class SimpleEmbeddingService {
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash;
     }
-    return (hash + 0x7fffffff) % 1000;
+    return Math.abs(hash) % 1000;
   }
 
   async generateEmbedding(text) {
