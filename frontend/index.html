@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Windsurf Chatbot - Production</title>
+    <title>Upsoma Consultancy Chatbot</title>
     <style>
         * {
             margin: 0;
@@ -258,7 +258,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 Windsurf Chatbot</h1>
+            <h1>🚀 Upsoma Consultancy Chatbot</h1>
             <p>Production Deployment - Live Backend Connected</p>
             <div id="connectionStatus">
                 <span class="status-indicator status-offline"></span>
@@ -298,6 +298,26 @@
                 <div class="form-group">
                     <label for="searchQuery">Search Query</label>
                     <input type="text" id="searchQuery" placeholder="Enter your search query...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="searchLimit">Number of Results</label>
+                    <select id="searchLimit" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                        <option value="5">5 results</option>
+                        <option value="10" selected>10 results</option>
+                        <option value="20">20 results</option>
+                        <option value="50">50 results</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="scoreThreshold">Minimum Match Score</label>
+                    <select id="scoreThreshold" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                        <option value="0.2">Low (20%) - More results</option>
+                        <option value="0.4" selected>Medium (40%) - Balanced</option>
+                        <option value="0.6">High (60%) - Better quality</option>
+                        <option value="0.8">Very High (80%) - Best matches only</option>
+                    </select>
                 </div>
                 
                 <button class="button" onclick="performSearch()">🔍 Search</button>
@@ -421,6 +441,8 @@
         // Search
         async function performSearch() {
             const query = document.getElementById('searchQuery').value.trim();
+            const limit = parseInt(document.getElementById('searchLimit').value);
+            const scoreThreshold = parseFloat(document.getElementById('scoreThreshold').value);
             
             if (!query) {
                 showMessage('⚠️ Please enter a search query', 'error');
@@ -439,8 +461,8 @@
                     },
                     body: JSON.stringify({
                         query: query,
-                        limit: 10,
-                        score_threshold: 0.4
+                        limit: limit,
+                        score_threshold: scoreThreshold
                     })
                 });
 

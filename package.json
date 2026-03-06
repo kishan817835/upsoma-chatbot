@@ -1,7 +1,7 @@
 {
-  "name": "windsurf-chatbot",
+  "name": "upsoma-consultancy-chatbot",
   "version": "1.0.0",
-  "description": "Enhanced Windsurf Chatbot with Document Processing and Vector Search",
+  "description": "Upsoma Consultancy Chatbot with Document Processing and Vector Search",
   "main": "src/windsurf-server.js",
   "scripts": {
     "start": "node src/windsurf-server.js",
@@ -10,13 +10,14 @@
   },
   "keywords": [
     "chatbot",
+    "consultancy",
     "document-processing",
     "vector-search",
     "qdrant",
     "rag",
     "embeddings"
   ],
-  "author": "Windsurf Team",
+  "author": "Upsoma Consultancy",
   "license": "MIT",
   "dependencies": {
     "@hono/node-server": "^1.12.0",
