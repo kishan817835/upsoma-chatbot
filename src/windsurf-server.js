@@ -23,24 +23,24 @@ const vectorService = new VectorService();
 const documentService = new DocumentService();
 
 const upload = multer({
-  dest: 'uploads/',
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['.pdf', '.txt'];
+    const allowedTypes = ['.txt'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowedTypes.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Only PDF and TXT files are allowed'));
+      cb(new Error('Only TXT files are supported in production deployment'));
     }
   }
 });
 
 app.use('*', async (c, next) => {
   if (c.req.method === 'POST' && c.req.path.includes('upload')) {
-    // Handle multipart data
+   
     return next();
   }
   return next();
