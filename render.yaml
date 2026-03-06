@@ -1,0 +1,23 @@
+services:
+  app:
+    buildCommand: |
+      chmod +x render-build.sh
+      ./render-build.sh
+    startCommand: node src/windsurf-server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: QDRANT_URL
+        value: https://821266cd-5c75-487f-adbf-47ee9bf61f72.sa-east-1-0.aws.cloud.qdrant.io:6333
+      - key: QDRANT_API_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.oYFM6Ktlk6TennvuBimSoK1Puqm2f7afQmaaRvkOxpU
+      - key: MODEL_NAME
+        value: Xenova/all-MiniLM-L6-v2
+      - key: MODEL_DIMENSIONS
+        value: 384
+      - key: CHUNK_SIZE
+        value: 200
+      - key: CHUNK_OVERLAP
+        value: 50

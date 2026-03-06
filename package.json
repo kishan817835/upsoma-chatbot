@@ -4,9 +4,10 @@
   "description": "Production-grade high-performance Node.js embeddings API with worker threads and dynamic batching",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node src/server.js",
-    "test": "node --test"
+    "start": "node src/windsurf-server.js",
+    "dev": "node src/windsurf-server.js",
+    "build": "npm install --platform=linux --arch=x64 sharp && npm install --platform=linux --arch=x64 canvas && npm install",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "embeddings",
