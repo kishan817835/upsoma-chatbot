@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Windsurf Chatbot - AI Document Search</title>
+    <title>Windsurf Chatbot - Production</title>
     <style>
         * {
             margin: 0;
@@ -25,49 +25,27 @@
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             text-align: center;
+            margin-bottom: 40px;
+            color: white;
         }
 
         .header h1 {
-            color: #333;
+            font-size: 2.5rem;
             margin-bottom: 10px;
-            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
         .header p {
-            color: #666;
-            font-size: 1.1em;
+            font-size: 1.2rem;
+            opacity: 0.9;
         }
 
-        .server-status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #e8f5e8;
-            border-radius: 25px;
-            color: #2e7d32;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #4caf50;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        .main-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
         .tabs {
@@ -76,34 +54,25 @@
             margin-bottom: 30px;
         }
 
-        .tab {
-            flex: 1;
-            padding: 15px 20px;
-            background: rgba(255, 255, 255, 0.9);
+        .tab-button {
+            padding: 12px 24px;
             border: none;
-            border-radius: 10px;
+            background: #f0f0f0;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
             transition: all 0.3s ease;
         }
 
-        .tab:hover {
-            background: rgba(255, 255, 255, 1);
-            transform: translateY(-2px);
-        }
-
-        .tab.active {
-            background: #4caf50;
+        .tab-button.active {
+            background: #1976d2;
             color: white;
         }
 
-        .content {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            min-height: 500px;
+        .tab-button:hover {
+            background: #e3f2fd;
+            color: white;
         }
 
         .tab-content {
@@ -114,115 +83,72 @@
             display: block;
         }
 
-        .upload-area {
-            border: 3px dashed #ddd;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .form-group {
             margin-bottom: 20px;
         }
 
-        .upload-area:hover,
-        .upload-area.dragover {
-            border-color: #4caf50;
-            background: #f1f8e9;
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
         }
 
-        .upload-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-            color: #666;
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
         }
 
-        .file-input {
-            display: none;
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #1976d2;
         }
 
-        .btn {
-            background: #4caf50;
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .button {
+            background: linear-gradient(45deg, #4caf50, #45a049);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 18px;
             font-weight: 600;
+            cursor: pointer;
             transition: all 0.3s ease;
+            display: block;
+            width: 100%;
         }
 
-        .btn:hover {
-            background: #45a049;
+        .button:hover {
             transform: translateY(-2px);
-        }
-
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .text-input {
-            width: 100%;
-            min-height: 200px;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
-            resize: vertical;
-            margin-bottom: 20px;
-        }
-
-        .text-input:focus {
-            outline: none;
-            border-color: #4caf50;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: #4caf50;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 20px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #4caf50;
-            transition: width 0.3s ease;
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
         }
 
         .message {
             padding: 15px;
             border-radius: 8px;
-            margin: 20px 0;
+            margin-bottom: 20px;
         }
 
         .message.success {
             background: #e8f5e8;
-            border: 1px solid #c8e6c9;
+            border: 1px solid #c3e6cb;
             color: #2e7d32;
         }
 
         .message.error {
             background: #ffebee;
-            border: 1px solid #f8bbd9;
+            border: 1px solid #ffcdd2;
             color: #c62828;
         }
 
@@ -230,10 +156,6 @@
             background: #e3f2fd;
             border: 1px solid #bbdefb;
             color: #1565c0;
-        }
-
-        .results {
-            margin-top: 20px;
         }
 
         .result-item {
@@ -248,6 +170,48 @@
         .result-item:hover {
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             transform: translateY(-2px);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            background: #4caf50;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4caf50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .grouped-results {
@@ -274,161 +238,76 @@
             margin-left: 20px;
         }
 
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .score {
-            background: #4caf50;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .result-text {
-            line-height: 1.6;
-            color: #333;
-        }
-
-        .highlight {
-            background: #ffeb3b;
-            padding: 2px 4px;
-            border-radius: 2px;
-        }
-
-        .stats {
-            background: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .stats h3 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .stat-item:last-child {
-            border-bottom: none;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #4caf50;
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin-right: 8px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .status-online {
+            background: #4caf50;
+        }
+
+        .status-offline {
+            background: #f44336;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 Upsoma Chatbot</h1>
-            <p>AI-Powered Document Search & RAG System</p>
-            <div class="server-status">
-                <div class="status-dot"></div>
-                <span id="serverStatus">Checking server...</span>
+            <h1>🚀 Windsurf Chatbot</h1>
+            <p>Production Deployment - Live Backend Connected</p>
+            <div id="connectionStatus">
+                <span class="status-indicator status-offline"></span>
+                <span id="statusText">Checking connection...</span>
             </div>
         </div>
 
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('upload')">📄 Upload Documents</button>
-            <button class="tab" onclick="showTab('search')">🔍 Search Documents</button>
-            <button class="tab" onclick="showTab('stats')">📊 Statistics</button>
-        </div>
+        <div class="main-content">
+            <div class="tabs">
+                <button class="tab-button active" onclick="showTab('upload')">📄 Upload</button>
+                <button class="tab-button" onclick="showTab('search')">🔍 Search</button>
+                <button class="tab-button" onclick="showTab('stats')">📊 Stats</button>
+            </div>
 
-        <div class="content">
             <!-- Upload Tab -->
             <div id="upload" class="tab-content active">
-                <h2>Upload Documents</h2>
-                <p>Upload PDF or TXT files to add them to the knowledge base</p>
+                <div class="form-group">
+                    <label for="fileName">Document Name *</label>
+                    <input type="text" id="fileName" placeholder="Enter document name" required>
+                </div>
                 
-                <div class="upload-area" onclick="document.getElementById('fileInput').click()" 
-                     ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                    <div class="upload-icon">📤</div>
-                    <h3>Drag & Drop your file here</h3>
-                    <p>or <strong>browse</strong> to choose a file</p>
-                    <p style="font-size: 14px; color: #666; margin-top: 10px;">Supported: PDF, TXT (Max: 10MB)</p>
+                <div class="form-group">
+                    <label for="companyName">Organization Name *</label>
+                    <input type="text" id="companyName" placeholder="Enter organization name" required>
                 </div>
-                <input type="file" id="fileInput" class="file-input" accept=".pdf,.txt" onchange="handleFileSelect(event)">
-
-                <div id="uploadProgress" class="progress-bar" style="display: none;">
-                    <div class="progress-fill" id="progressFill"></div>
+                
+                <div class="form-group">
+                    <label for="textInput">Text Content *</label>
+                    <textarea id="textInput" placeholder="Enter your text content here..." required></textarea>
                 </div>
-
-                <div id="uploadMessage"></div>
-
-                <!-- Text Input Section -->
-                <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #e0e0e0;">
-                    <h3>Or paste text directly:</h3>
-                    <textarea id="textInput" class="text-input" placeholder="Paste your document text here..." required></textarea>
-                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                        <input type="text" id="fileName" placeholder="Document name" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px;" required>
-                        <input type="text" id="companyName" placeholder="Organization name" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px;" required>
-                    </div>
-                    <button class="btn" onclick="uploadText()">Upload Text</button>
-                </div>
+                
+                <button class="button" onclick="uploadText()">📤 Upload Text</button>
             </div>
 
             <!-- Search Tab -->
             <div id="search" class="tab-content">
-                <h2>Search Documents</h2>
-                <p>Find relevant information from your uploaded documents</p>
-                
-                <input type="text" id="searchQuery" class="search-input" placeholder="Enter your question or search terms...">
-                
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <label>
-                        Max Results:
-                        <input type="number" id="searchLimit" value="5" min="1" max="20" style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
-                    </label>
-                    <label>
-                        Similarity Threshold:
-                        <input type="number" id="searchThreshold" value="0.4" min="0" max="1" step="0.1" style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
-                    </label>
+                <div class="form-group">
+                    <label for="searchQuery">Search Query</label>
+                    <input type="text" id="searchQuery" placeholder="Enter your search query...">
                 </div>
                 
-                <button class="btn" onclick="performSearch()">🔍 Search</button>
+                <button class="button" onclick="performSearch()">🔍 Search</button>
                 
-                <div id="searchProgress" class="loading" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Searching through documents...</p>
-                </div>
-                
-                <div id="searchMessage"></div>
-                <div id="searchResults" class="results"></div>
+                <div id="searchResults"></div>
             </div>
 
             <!-- Stats Tab -->
             <div id="stats" class="tab-content">
-                <h2>System Statistics</h2>
-                <div id="statsContent" class="stats">
+                <div id="statsContent">
                     <div class="loading">
                         <div class="spinner"></div>
                         <p>Loading statistics...</p>
@@ -439,7 +318,7 @@
     </div>
 
     <script>
-        // Configuration
+        // Configuration - Connect to live backend
         const API_BASE = 'https://upsoma-chatbot.onrender.com';
         let currentFile = null;
 
@@ -452,12 +331,12 @@
         // Tab switching
         function showTab(tabName) {
             // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => button.classList.remove('active'));
             
             // Show selected tab
             document.getElementById(tabName).classList.add('active');
@@ -471,207 +350,108 @@
 
         // Server health check
         async function checkServerHealth() {
+            const statusIndicator = document.querySelector('.status-indicator');
+            const statusText = document.getElementById('statusText');
+            
             try {
                 const response = await fetch(`${API_BASE}/health`);
-                const health = await response.json();
+                const data = await response.json();
                 
-                document.getElementById('serverStatus').textContent = 
-                    `Online • ${health.vector_db.points_count} documents • ${health.model}`;
+                if (data.status === 'healthy') {
+                    statusIndicator.classList.remove('status-offline');
+                    statusIndicator.classList.add('status-online');
+                    statusText.textContent = 'Connected to live backend';
+                    showMessage('✅ Server is healthy and connected!', 'success');
+                }
             } catch (error) {
-                document.getElementById('serverStatus').textContent = 'Server Offline';
+                statusIndicator.classList.remove('status-online');
+                statusIndicator.classList.add('status-offline');
+                statusText.textContent = 'Unable to connect to backend';
+                showMessage('❌ Unable to connect to server', 'error');
             }
         }
 
-        // File handling
-        function handleDragOver(event) {
-            event.preventDefault();
-            event.currentTarget.classList.add('dragover');
-        }
-
-        function handleDragLeave(event) {
-            event.preventDefault();
-            event.currentTarget.classList.remove('dragover');
-        }
-
-        function handleDrop(event) {
-            event.preventDefault();
-            event.currentTarget.classList.remove('dragover');
-            
-            const files = event.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
-        }
-
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                handleFile(file);
-            }
-        }
-
-        function handleFile(file) {
-            // Validate file
-            const maxSize = 10 * 1024 * 1024; // 10MB
-            const allowedTypes = ['application/pdf', 'text/plain'];
-            const allowedExtensions = ['.pdf', '.txt'];
-            
-            if (file.size > maxSize) {
-                showMessage('uploadMessage', 'File size must be less than 10MB', 'error');
-                return;
-            }
-            
-            const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-            if (!allowedExtensions.includes(extension)) {
-                showMessage('uploadMessage', 'Only PDF and TXT files are allowed', 'error');
-                return;
-            }
-            
-            currentFile = file;
-            uploadFile();
-        }
-
-        async function uploadFile() {
-            if (!currentFile) return;
-            
-            const formData = new FormData();
-            formData.append('file', currentFile);
-            
-            // Show progress
-            document.getElementById('uploadProgress').style.display = 'block';
-            document.getElementById('uploadMessage').innerHTML = '';
-            
-            try {
-                const xhr = new XMLHttpRequest();
-                
-                // Progress tracking
-                xhr.upload.addEventListener('progress', function(event) {
-                    if (event.lengthComputable) {
-                        const percentComplete = (event.loaded / event.total) * 100;
-                        document.getElementById('progressFill').style.width = percentComplete + '%';
-                    }
-                });
-                
-                xhr.addEventListener('load', function() {
-                    if (xhr.status === 200) {
-                        const response = JSON.parse(xhr.responseText);
-                        showMessage('uploadMessage', 
-                            `✅ Successfully processed "${response.document.fileName}" (${response.document.totalChunks} chunks)`, 
-                            'success');
-                    } else {
-                        showMessage('uploadMessage', '❌ Upload failed', 'error');
-                    }
-                    document.getElementById('uploadProgress').style.display = 'none';
-                    currentFile = null;
-                    document.getElementById('fileInput').value = '';
-                });
-                
-                xhr.addEventListener('error', function() {
-                    showMessage('uploadMessage', '❌ Upload failed', 'error');
-                    document.getElementById('uploadProgress').style.display = 'none';
-                });
-                
-                xhr.open('POST', `${API_BASE}/upload`);
-                xhr.send(formData);
-                
-            } catch (error) {
-                showMessage('uploadMessage', '❌ Upload failed: ' + error.message, 'error');
-                document.getElementById('uploadProgress').style.display = 'none';
-            }
-        }
-
+        // Upload text
         async function uploadText() {
-            const text = document.getElementById('textInput').value.trim();
             const fileName = document.getElementById('fileName').value.trim();
             const companyName = document.getElementById('companyName').value.trim();
-            
-            if (!text) {
-                showMessage('uploadMessage', 'Please enter some text', 'error');
+            const textInput = document.getElementById('textInput').value.trim();
+
+            // Validation
+            if (!fileName || !companyName || !textInput) {
+                showMessage('⚠️ Please fill in all required fields', 'error');
                 return;
             }
-            
-            if (!fileName) {
-                showMessage('uploadMessage', 'Please enter document name', 'error');
-                return;
-            }
-            
-            if (!companyName) {
-                showMessage('uploadMessage', 'Please enter organization name', 'error');
-                return;
-            }
-            
+
             try {
+                showMessage('📤 Uploading document...', 'info');
+
                 const response = await fetch(`${API_BASE}/upload/text`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ text, fileName, companyName })
+                    body: JSON.stringify({
+                        text: textInput,
+                        fileName: fileName,
+                        companyName: companyName
+                    })
                 });
-                
+
                 const result = await response.json();
-                
-                if (result.success) {
-                    const companyInfo = companyName ? `with organization "${companyName}"` : 'processed';
-                    showMessage('uploadMessage', 
-                        `✅ Successfully processed "${result.document.fileName}" (${result.document.totalChunks} chunks) ${companyInfo}`, 
-                        'success');
-                    document.getElementById('textInput').value = '';
+
+                if (response.ok) {
+                    showMessage(`✅ Successfully uploaded "${fileName}" from ${companyName}!`, 'success');
+                    
+                    // Clear form
                     document.getElementById('fileName').value = '';
                     document.getElementById('companyName').value = '';
+                    document.getElementById('textInput').value = '';
+                    
+                    // Refresh stats
+                    loadStats();
                 } else {
-                    showMessage('uploadMessage', '❌ Upload failed: ' + result.message, 'error');
+                    showMessage(`❌ Upload failed: ${result.error?.message || 'Unknown error'}`, 'error');
                 }
             } catch (error) {
-                showMessage('uploadMessage', '❌ Upload failed: ' + error.message, 'error');
-                document.getElementById('uploadProgress').style.display = 'none';
+                showMessage(`❌ Upload error: ${error.message}`, 'error');
             }
         }
 
+        // Search
         async function performSearch() {
             const query = document.getElementById('searchQuery').value.trim();
-            const limit = parseInt(document.getElementById('searchLimit').value);
-            const threshold = parseFloat(document.getElementById('searchThreshold').value);
             
             if (!query) {
-                showMessage('searchMessage', 'Please enter a search query', 'error');
+                showMessage('⚠️ Please enter a search query', 'error');
                 return;
             }
-            
-            // Show loading
-            document.getElementById('searchProgress').style.display = 'block';
-            document.getElementById('searchMessage').innerHTML = '';
-            document.getElementById('searchResults').innerHTML = '';
-            
+
             try {
+                showMessage('🔍 Searching...', 'info');
+                const resultsDiv = document.getElementById('searchResults');
+                resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Searching...</p></div>';
+
                 const response = await fetch(`${API_BASE}/v1/search`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         query: query,
-                        limit: limit,
-                        score_threshold: threshold
+                        limit: 10,
+                        score_threshold: 0.4
                     })
                 });
-                
+
                 const result = await response.json();
-                
-                document.getElementById('searchProgress').style.display = 'none';
-                
-                if (result.data && result.data.length > 0) {
-                    displaySearchResults(result);
-                } else {
-                    showMessage('searchMessage', `No results found for "${query}"`, 'info');
-                }
-                
+                displaySearchResults(result);
             } catch (error) {
-                document.getElementById('searchProgress').style.display = 'none';
-                showMessage('searchMessage', '❌ Search failed: ' + error.message, 'error');
+                showMessage(`❌ Search error: ${error.message}`, 'error');
             }
         }
 
+        // Display search results
         function displaySearchResults(result) {
             const resultsDiv = document.getElementById('searchResults');
             
@@ -752,98 +532,57 @@
             resultsDiv.innerHTML = html;
         }
 
+        // Highlight search terms
         function highlightText(text, query) {
             if (!query) return text;
             const regex = new RegExp(`(${query})`, 'gi');
             return text.replace(regex, '<span class="highlight">$1</span>');
         }
 
+        // Load statistics
         async function loadStats() {
-            const statsDiv = document.getElementById('statsContent');
-            
             try {
-                const response = await fetch(`${API_BASE}/health`);
-                const health = await response.json();
+                const response = await fetch(`${API_BASE}/v1/vector-stats`);
+                const stats = await response.json();
                 
-                const html = `
-                    <div class="stats">
-                        <h3>🏥 System Health</h3>
-                        <div class="stat-item">
-                            <span>Status:</span>
-                            <span style="color: ${health.status === 'ok' ? '#4caf50' : '#ff9800'}">${health.status}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span>Model:</span>
-                            <span>${health.model}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span>Dimensions:</span>
-                            <span>${health.dimensions}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span>Service:</span>
-                            <span>${health.service}</span>
-                        </div>
+                const statsDiv = document.getElementById('statsContent');
+                statsDiv.innerHTML = `
+                    <div class="message info">
+                        📊 Vector Database Statistics
                     </div>
-                    
-                    <div class="stats">
-                        <h3>🗄️ Vector Database</h3>
-                        <div class="stat-item">
-                            <span>Service:</span>
-                            <span>${health.vector_db.service}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span>Collection:</span>
-                            <span>${health.vector_db.collection}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span>Documents:</span>
-                            <span style="color: #1976d2; font-weight: 600;">${health.vector_db.points_count}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span>Status:</span>
-                            <span style="color: ${health.vector_db.is_initialized ? '#4caf50' : '#f44336'}">
-                                ${health.vector_db.is_initialized ? 'Ready' : 'Not Ready'}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div class="stats">
-                        <h3>📄 Document Processor</h3>
-                        <div class="stat-item">
-                            <span>Chunk Size:</span>
-                            <span>${health.document_processor.chunkSize} words</span>
-                        </div>
-                        <div class="stat-item">
-                            <span>Chunk Overlap:</span>
-                            <span>${health.document_processor.chunkOverlap} words</span>
-                        </div>
-                        <div class="stat-item">
-                            <span>Supported Formats:</span>
-                            <span>${health.document_processor.supportedFormats.join(', ')}</span>
-                        </div>
+                    <div class="result-item">
+                        <h4>Collection: ${stats.collection_name}</h4>
+                        <p><strong>Vectors Count:</strong> ${stats.vectors_count}</p>
+                        <p><strong>Points Count:</strong> ${stats.points_count}</p>
+                        <p><strong>Segments Count:</strong> ${stats.segments_count}</p>
+                        <p><strong>Indexed Vectors:</strong> ${stats.indexed_vectors_count}</p>
+                        <p><strong>Points Per Segment:</strong> ${stats.points_per_segment}</p>
+                        <p><strong>Optimization Status:</strong> ${stats.optimizer_status}</p>
+                        <p><strong>Queue Size:</strong> ${stats.waiting_queue_points}</p>
                     </div>
                 `;
-                
-                statsDiv.innerHTML = html;
-                
             } catch (error) {
+                const statsDiv = document.getElementById('statsContent');
                 statsDiv.innerHTML = `
                     <div class="message error">
-                        ❌ Failed to load statistics: ${error.message}
+                        ❌ Unable to load statistics: ${error.message}
                     </div>
                 `;
             }
         }
 
-        function showMessage(elementId, message, type) {
-            const element = document.getElementById(elementId);
-            element.innerHTML = `<div class="message ${type}">${message}</div>`
-            if (type === 'success') {
-                setTimeout(() => {
-                    element.innerHTML = '';
-                }, 5000);
-            }
+        // Show message
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = message;
+            
+            const container = document.querySelector('.main-content');
+            container.insertBefore(messageDiv, container.firstChild);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
         }
     </script>
 </body>
