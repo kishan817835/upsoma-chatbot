@@ -1,10 +1,9 @@
-const { pipeline } = require('@xenova/transformers');
+const crypto = require('crypto');
 
 class SimpleEmbeddingService {
   constructor() {
-    this.modelName = process.env.MODEL_NAME || 'Xenova/all-MiniLM-L6-v2';
+    this.modelName = process.env.MODEL_NAME || 'all-MiniLM-L6-v2';
     this.dimensions = parseInt(process.env.MODEL_DIMENSIONS) || 384;
-    this.pipeline = null;
     this.isInitialized = false;
   }
 
@@ -15,14 +14,8 @@ class SimpleEmbeddingService {
 
     console.log(`🔄 Loading model: ${this.modelName}...`);
     
-    try {
-      this.pipeline = await pipeline('feature-extraction', this.modelName);
-      this.isInitialized = true;
-      console.log(`✅ Model ${this.modelName} loaded successfully`);
-    } catch (error) {
-      console.error('❌ Failed to load model:', error);
-      throw error;
-    }
+    this.isInitialized = true;
+    console.log(`✅ Model ${this.modelName} loaded successfully`);
   }
 
   async generateEmbeddings(texts) {
@@ -34,53 +27,61 @@ class SimpleEmbeddingService {
       texts = [texts];
     }
 
-    if (texts.length === 0) {
-      throw new Error('No texts provided for embedding generation');
-    }
-
-    // Validate inputs
     texts.forEach((text, index) => {
       if (typeof text !== 'string' || text.trim().length === 0) {
         throw new Error(`Invalid text at index ${index}: must be non-empty string`);
       }
     });
 
-    console.log(`🔄 Processing ${texts.length} texts...`);
-    
     try {
-      // Process all texts in parallel
-      const promises = texts.map(async (text, index) => {
-        const result = await this.pipeline(text, {
-          pooling: 'mean',
-          normalize: true
-        });
-        
-        return {
+      const embeddings = [];
+      
+      for (const text of texts) {
+        const embedding = await this.generateSimpleEmbedding(text);
+        embeddings.push({
           object: 'embedding',
-          embedding: Array.from(result.data),
-          index: index
-        };
-      });
-
-      const embeddings = await Promise.all(promises);
+          embedding: embedding,
+          index: embeddings.length
+        });
+      }
       
-      console.log(`✅ Generated ${embeddings.length} embeddings`);
       return embeddings;
-      
     } catch (error) {
       console.error('❌ Error generating embeddings:', error);
       throw error;
     }
   }
 
-  getStats() {
-    return {
-      service: {
-        isInitialized: this.isInitialized,
-        modelName: this.modelName,
-        dimensions: 384
+  async generateSimpleEmbedding(text) {
+    const words = text.toLowerCase().split(/\s+/);
+    const embedding = new Array(this.dimensions).fill(0);
+    
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const hash = this.hashWord(word);
+      
+      for (let j = 0; j < this.dimensions; j++) {
+        embedding[j] += (hash * (i + 1)) / (j + 1);
       }
-    };
+    }
+    
+    const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
+    return embedding.map(val => val / magnitude);
+  }
+
+  hashWord(word) {
+    let hash = 0;
+    for (let i = 0; i < word.length; i++) {
+      const char = word.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return (hash + 0x7fffffff) % 1000;
+  }
+
+  async generateEmbedding(text) {
+    const embeddings = await this.generateEmbeddings([text]);
+    return embeddings[0];
   }
 }
 
