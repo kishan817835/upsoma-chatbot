@@ -13,7 +13,7 @@ const path = require('path');
 const app = new Hono();
 
 app.use('/*', cors({
-  origin: ['http://localhost:4200', 'http://127.0.0.1:4200', 'http://127.0.0.1:5500', 'null'],
+  origin: ['http://localhost:4200', 'http://127.0.0.1:4200', 'http://127.0.0.1:5500', 'https://upsoma-chatbot.netlify.app', 'null'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }));
