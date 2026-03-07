@@ -1,26 +1,14 @@
 const { QdrantClient } = require('@qdrant/js-client-rest');
-const crypto = require('crypto');
 
 class VectorService {
   constructor() {
-    this.client = null;
+    this.client = new QdrantClient({
+      url: 'https://821266cd-5c75-487f-adbf-47ee9bf61f72.sa-east-1-0.aws.cloud.qdrant.io:6333',
+      apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.oYFM6Ktlk6TennvuBimSoK1Puqm2f7afQmaaRvkOxpU'
+    });
+    
     this.collectionName = 'embeddings';
     this.isInitialized = false;
-    
-    this.qdrantUrl = process.env.QDRANT_URL || 'https://821266cd-5c75-487f-adbf-47ee9bf61f72.sa-east-1-0.aws.cloud.qdrant.io:6333';
-    this.qdrantApiKey = process.env.QDRANT_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.oYFM6Ktlk6TennvuBimSoK1Puqm2f7afQmaaRvkOxpU';
-
-    try {
-      console.log('🔄 Initializing Qdrant vector database...');
-      
-      this.client = new QdrantClient({
-        url: this.qdrantUrl,
-        apiKey: this.qdrantApiKey
-      });
-    } catch (error) {
-      console.error('❌ Failed to initialize Qdrant client:', error);
-      throw error;
-    }
   }
 
   async initialize() {

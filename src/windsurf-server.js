@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 const { Hono } = require('hono');
 const { serve } = require('@hono/node-server');
 const { cors } = require('hono/cors');
@@ -8,12 +6,12 @@ const { VectorService } = require('./services/vectorService');
 const { DocumentService } = require('./services/documentService');
 const multer = require('multer');
 const fs = require('fs').promises;
-const path = require('path');
 
 const app = new Hono();
 
+// Enable CORS for all routes
 app.use('/*', cors({
-  origin: ['http://localhost:4200', 'http://127.0.0.1:4200', 'http://127.0.0.1:5500', 'https://upsoma-chatbot.netlify.app', 'null'],
+  origin: ['http://localhost:4200', 'http://127.0.0.1:4200', 'http://127.0.0.1:5500', 'null'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -22,25 +20,27 @@ const embeddingService = new SimpleEmbeddingService();
 const vectorService = new VectorService();
 const documentService = new DocumentService();
 
+// Configure multer for file uploads
 const upload = multer({
-  storage: multer.memoryStorage(),
+  dest: 'uploads/',
   limits: {
-    fileSize: 10 * 1024 * 1024 
+    fileSize: 10 * 1024 * 1024 // 10MB
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['.txt'];
+    const allowedTypes = ['.pdf', '.txt'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowedTypes.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Only TXT files are supported in production deployment'));
+      cb(new Error('Only PDF and TXT files are allowed'));
     }
   }
 });
 
+// Middleware to handle multipart form data
 app.use('*', async (c, next) => {
   if (c.req.method === 'POST' && c.req.path.includes('upload')) {
-   
+    // Handle multipart data
     return next();
   }
   return next();
@@ -217,6 +217,170 @@ app.post('/upload/text', async (c) => {
     }, 500);
   }
 });
+
+// Chatbot endpoint with Sarvam AI integration
+app.post('/v1/chatbot', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { message } = body;
+    
+    if (!message || typeof message !== 'string') {
+      return c.json({
+        success: false,
+        error: {
+          message: 'Message field is required and must be a string',
+          type: 'invalid_request_error'
+        }
+      }, 400);
+    }
+    
+    // Step 1: Generate embedding for user message
+    const queryEmbeddings = await embeddingService.generateEmbeddings([message]);
+    const queryEmbedding = queryEmbeddings[0].embedding;
+    
+    // Step 2: Search in vector database with fixed parameters
+    console.log(`🔍 Searching for: "${message}"`);
+    const searchResults = await vectorService.searchEmbeddings(queryEmbedding, 3, 0.3);
+    console.log(`📊 Found ${searchResults.data.length} chunks`);
+    
+    if (searchResults.data.length === 0) {
+      console.log(`❌ No chunks found for message: "${message}"`);
+      return c.json({
+        success: true,
+        response: "I don't have information about that in my knowledge base.",
+        chunks_found: 0
+      });
+    }
+    
+    // Step 3: Check if company names match (if company mentioned in query) - TEMPORARILY DISABLED FOR TESTING
+    const extractedCompany = extractCompanyFromQuery(message);
+    let filteredResults = searchResults.data;
+    
+    console.log(`🏢 Extracted company: "${extractedCompany}"`);
+    console.log(`📊 Available companies in chunks: ${searchResults.data.map(r => r.metadata?.companyName || 'Unknown').join(', ')}`);
+    
+    // Temporarily disable company filtering to test
+    /*
+    if (extractedCompany) {
+      filteredResults = searchResults.data.filter(result => {
+        const resultCompany = result.metadata?.companyName || result.metadata?.organization_name || '';
+        return resultCompany.toLowerCase().includes(extractedCompany.toLowerCase());
+      });
+      
+      if (filteredResults.length === 0) {
+        return c.json({
+          success: true,
+          response: "Sorry, we do not currently have this information.",
+          chunks_found: 0
+        });
+      }
+    }
+    */
+    
+    // Step 4: Prepare context for LLM (retrieved chunks)
+    const retrievedChunks = filteredResults.map(result => result.text);
+    const context = retrievedChunks.join('\n\n');
+    console.log(`📝 Retrieved ${retrievedChunks.length} chunks for LLM processing`);
+    
+    // Step 5: Send to Sarvam AI LLM for smart response generation
+    console.log(`🤖 Sending to LLM for context understanding and response generation`);
+    const sarvamResponse = await callSarvamAI(message, context);
+    console.log(`✅ LLM generated response: ${sarvamResponse.substring(0, 100)}...`);
+    
+    return c.json({
+      success: true,
+      response: sarvamResponse,
+      chunks_found: filteredResults.length,
+      processing_flow: {
+        user_query: message,
+        embedding_created: true,
+        vector_search: {
+          limit: 3,
+          score_threshold: 0.3,
+          chunks_retrieved: filteredResults.length
+        },
+        llm_processing: true,
+        final_response: sarvamResponse
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Chatbot error:', error);
+    return c.json({
+      success: false,
+      error: {
+        message: error.message,
+        type: 'server_error'
+      }
+    }, 500);
+  }
+});
+
+// Helper function to extract company name from query
+function extractCompanyFromQuery(query) {
+  const companyPatterns = [
+    /\b([A-Z][a-z]+(?:\s+(?:Inc|Corp|Corporation|Company|Co|Ltd|LLC|Group|Holdings|Technologies|Solutions|Systems|Services|Enterprises))\b)/gi,
+    /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b/g
+  ];
+  
+  for (const pattern of companyPatterns) {
+    const matches = query.match(pattern);
+    if (matches && matches.length > 0) {
+      return matches[0];
+    }
+  }
+  
+  return null;
+}
+
+// Helper function to call Sarvam AI
+async function callSarvamAI(userMessage, context) {
+  const fs = require('fs').promises;
+  const rulesPath = './rules.txt';
+  
+  try {
+    const rules = await fs.readFile(rulesPath, 'utf8');
+    
+    // Create system prompt with rules and context for smart response generation
+    const systemPrompt = `${rules}\n\nRETRIEVED CHUNKS FROM DATABASE:\n${context}\n\nUSER QUESTION: ${userMessage}\n\nINSTRUCTIONS FOR INTELLIGENT RESPONSE:\n1. Read the retrieved chunks carefully and understand the context\n2. Generate a professional, intelligent response\n3. Use **bold text** for key points and important information\n4. Use bullet points (•) for multiple items when appropriate\n5. Keep the response concise and to-the-point\n6. Only include information that directly answers the user's question\n7. Do not include unnecessary details or full database content\n8. Format the response professionally with clear structure\n9. Always respond in English\n10. Be confident and precise in your answers\n\nRESPONSE FORMAT EXAMPLE:\n**Key Point 1**: Brief explanation\n• **Important Detail**: Specific information\n• **Another Detail**: Additional relevant info\n\nNow generate an intelligent, well-formatted response based on the retrieved chunks.`;
+    
+    const response = await fetch('https://api.sarvam.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer sk_xj1lkl9k_oDRFDGDPw2xVESqG1tTHgM2g',
+        'Content-Type': 'application/json',
+        'api-subscription-key': 'sk_xj1lkl9k_oDRFDGDPw2xVESqG1tTHgM2g'
+      },
+      body: JSON.stringify({
+        model: 'sarvam-m',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: userMessage
+          }
+        ],
+        max_tokens: 200, // Increased for better formatted responses
+        temperature: 0.3 // Slightly more creative for formatting
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.choices && result.choices.length > 0) {
+      return result.choices[0].message.content.trim();
+    } else {
+      return "I apologize, but I couldn't generate a response at the moment.";
+    }
+    
+  } catch (error) {
+    console.error('❌ Sarvam AI error:', error);
+    return "I apologize, but I encountered an error while processing your request.";
+  }
+}
 
 // Enhanced search endpoint with RAG
 app.post('/v1/search', async (c) => {
@@ -416,7 +580,7 @@ const port = process.env.PORT || 3000;
 async function startServer() {
   try {
     console.log('\n🚀 Starting Windsurf Chatbot API v1.0.0');
-    console.log(`📍 Port: ${process.env.PORT || 3000}`);
+    console.log(`📍 Port: ${port}`);
     console.log(`🤖 Model: Xenova/all-MiniLM-L6-v2 (384 dimensions)`);
     console.log(`🗄️  Vector DB: Qdrant Cloud`);
     console.log(`📄 File Upload: PDF & TXT supported`);

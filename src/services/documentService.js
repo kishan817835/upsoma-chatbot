@@ -1,35 +1,56 @@
 const fs = require('fs').promises;
 const path = require('path');
+const pdf = require('pdf-parse');
 
 class DocumentService {
   constructor() {
-    this.chunkSize = parseInt(process.env.CHUNK_SIZE) || 200;
-    this.chunkOverlap = parseInt(process.env.CHUNK_OVERLAP) || 50;
+    this.chunkSize = 400; // 200 words per chunk
+    this.chunkOverlap = 50; // words overlap between chunks
   }
 
   async processFile(filePath, originalName) {
     try {
       console.log(`🔄 Processing file: ${originalName}`);
-      
+    
       let text;
-      if (originalName.toLowerCase().endsWith('.txt')) {
+      if (originalName.toLowerCase().endsWith('.pdf')) {
+        text = await this.extractPDFText(filePath);
+      } else if (originalName.toLowerCase().endsWith('.txt')) {
         text = await this.extractTextFile(filePath);
       } else {
-        throw new Error('Only TXT files are supported in production deployment');
+        throw new Error('Unsupported file type. Only PDF and TXT files are allowed.');
       }
-      
+
+      // Clean and validate text
+      text = this.cleanText(text);
+      if (!text || text.trim().length === 0) {
+        throw new Error('No text content found in file');
+      }
+
+      // Split into chunks
       const chunks = this.chunkText(text, originalName);
       
+      console.log(`✅ Processed ${originalName}: ${chunks.length} chunks generated`);
+      
       return {
-        text: text,
-        chunks: chunks,
+        fileName: originalName,
         totalChunks: chunks.length,
-        fileName: originalName
+        chunks: chunks
       };
       
     } catch (error) {
-      console.error('❌ Error processing file:', error);
+      console.error(`❌ Error processing file ${originalName}:`, error);
       throw error;
+    }
+  }
+
+  async extractPDFText(filePath) {
+    try {
+      const dataBuffer = await fs.readFile(filePath);
+      const data = await pdf(dataBuffer);
+      return data.text;
+    } catch (error) {
+      throw new Error(`Failed to extract PDF text: ${error.message}`);
     }
   }
 
@@ -38,38 +59,25 @@ class DocumentService {
       const text = await fs.readFile(filePath, 'utf-8');
       return text;
     } catch (error) {
-      console.error('❌ Error reading text file:', error);
-      throw error;
+      throw new Error(`Failed to read text file: ${error.message}`);
     }
   }
 
-  async processText(text, fileName, companyName) {
-    try {
-      console.log(`🔄 Processing text: ${fileName}`);
-      
-      const chunks = this.chunkText(text, fileName, companyName);
-      
-      return {
-        text: text,
-        chunks: chunks,
-        totalChunks: chunks.length,
-        fileName: fileName
-      };
-      
-    } catch (error) {
-      console.error('❌ Error processing text:', error);
-      throw error;
-    }
+  cleanText(text) {
+    return text
+      .replace(/\r\n/g, '\n')           // Normalize line endings
+      .replace(/\n{3,}/g, '\n\n')       // Remove excessive line breaks
+      .replace(/[^\x20-\x7E\n]/g, '')   // Remove non-ASCII characters except newlines
+      .trim();
   }
 
-  chunkText(text, fileName, companyName) {
+  chunkText(text, fileName) {
     const words = text.split(/\s+/);
     const chunks = [];
     
     // Extract company name and document name (compulsory)
-    if (!companyName) {
-      companyName = this.extractCompanyName(text, fileName);
-    }
+    const companyName = this.extractCompanyName(text, fileName);
+    const documentName = fileName; // Document name from filename or input
     
     for (let i = 0; i < words.length; i += this.chunkSize - this.chunkOverlap) {
       const chunkWords = words.slice(i, i + this.chunkSize);
@@ -83,7 +91,9 @@ class DocumentService {
           wordCount: chunkWords.length,
           characterCount: chunkText.length,
           companyName: companyName, // Compulsory company name
-          documentName: documentName // Compulsory document name
+          documentName: documentName, // Compulsory document name
+          company_name: companyName, // Alternative field name for compatibility
+          document_name: documentName // Alternative field name for compatibility
         });
       }
     }
