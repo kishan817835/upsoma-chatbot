@@ -569,7 +569,9 @@ app.get('/dashboard', async (c) => {
     const html = await fs.readFile(htmlPath, 'utf8');
     
     // Replace localhost with current server URL
-    const serverUrl = `${c.req.protocol}://${c.req.header('host')}`;
+    const host = c.req.header('host') || 'localhost:3000';
+    const protocol = c.req.header('x-forwarded-proto') || 'http';
+    const serverUrl = `${protocol}://${host}`;
     const updatedHtml = html.replace('http://localhost:3000', serverUrl);
     
     return c.html(updatedHtml);
