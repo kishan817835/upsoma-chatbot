@@ -1,0 +1,26 @@
+{
+  "name": "production-embeddings-api",
+  "version": "2.0.0",
+  "description": "Production-grade high-performance Node.js embeddings API with worker threads and dynamic batching",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "nodemon src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "embeddings",
+    "transformers",
+    "hono",
+    "nodejs",
+    "api",
+    "production",
+    "worker-threads",
+    "batching"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}

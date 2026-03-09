@@ -1,0 +1,19 @@
+/* Global styles for transparent background */
+:host {
+  display: block;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}

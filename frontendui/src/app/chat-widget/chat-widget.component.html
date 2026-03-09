@@ -1,0 +1,82 @@
+<div class="chat-widget-container" [style]="containerPosition">
+  <!-- Chat Toggle Button -->
+  <button 
+    class="chat-toggle-btn" 
+    (click)="toggleChat()"
+    [class.active]="isOpen"
+    [style.background]="themeColors.primary">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+    <span class="chat-badge">💬</span>
+  </button>
+
+  <!-- Chat Window -->
+  <div class="chat-window" 
+       [class.open]="isOpen"
+       [style]="windowPosition">
+    <!-- Chat Header -->
+    <div class="chat-header" [style.background]="themeColors.primary">
+      <div class="header-content">
+        <h3>{{ config.title }}</h3>
+        <span class="status-indicator online"></span>
+      </div>
+      <button class="close-btn" (click)="toggleChat()">×</button>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="messages-container" #messagesContainer>
+      <div 
+        *ngFor="let message of messages" 
+        class="message" 
+        [class.user-message]="message.sender === 'user'"
+        [class.bot-message]="message.sender === 'bot'">
+        
+        <div class="message-content" *ngIf="message.text !== 'TYPING_INDICATOR'">
+          <div class="sender-name">
+            <strong>{{ message.sender === 'user' ? '👤 You' : '🤖 ' + config.title }}</strong>
+          </div>
+          <div class="message-text" [innerHTML]="formatMessage(message.text)"></div>
+        </div>
+        
+        <!-- Typing Indicator -->
+        <div class="message-content" *ngIf="message.text === 'TYPING_INDICATOR'">
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+        
+        <div class="message-time" *ngIf="message.text !== 'TYPING_INDICATOR'">{{ message.time }}</div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-container">
+        <textarea 
+          [(ngModel)]="currentMessage"
+          (keypress)="handleKeyPress($event)"
+          [placeholder]="config.placeholder"
+          rows="1"
+          #messageInput
+          class="message-input">
+        </textarea>
+        <button 
+          class="send-btn" 
+          (click)="sendMessage()"
+          [disabled]="!currentMessage.trim() || isLoading"
+          [style.background]="themeColors.primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22,2 15,22 11,13 2,9"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="input-info">
+        <small>💡 I'll search through your documents and provide precise answers.</small>
+      </div>
+    </div>
+  </div>
+</div>

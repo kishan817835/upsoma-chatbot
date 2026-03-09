@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windsurf Chatbot - AI Document Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .server-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #e8f5e8;
+            border-radius: 25px;
+            color: #2e7d32;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: #4caf50;
+            color: white;
+        }
+
+        .content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: #4caf50;
+            background: #f1f8e9;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .text-input {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            margin-bottom: 20px;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #4caf50;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4caf50;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4caf50;
+            transition: width 0.3s ease;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .message.success {
+            background: #e8f5e8;
+            border: 1px solid #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .message.error {
+            background: #ffebee;
+            border: 1px solid #f8bbd9;
+            color: #c62828;
+        }
+
+        .message.info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            color: #1565c0;
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .result-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .grouped-results {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .group-section h4 {
+            color: #1976d2;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        
+        .group-info {
+            color: #666;
+            font-size: 14px;
+            margin: 0 0 10px 0;
+        }
+        
+        .group-chunks {
+            margin-left: 20px;
+        }
+
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: #1976d2;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .bot-message {
+            background: #e3f2fd;
+            color: #333;
+        }
+
+        .message-content {
+            margin-bottom: 5px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #1976d2;
+        }
+
+        .chat-send-btn {
+            padding: 12px 20px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .chat-send-btn:hover {
+            background: #1565c0;
+        }
+
+        .chat-info {
+            text-align: center;
+            color: #666;
+        }
+
+        .message-content strong {
+            color: #1976d2;
+            font-weight: 600;
+        }
+
+        .message-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .message-content li {
+            margin: 4px 0;
+            line-height: 1.4;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            background: #4caf50;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .result-text {
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .stats {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stats h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4caf50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Upsoma Chatbot</h1>
+            <p>AI-Powered Document Search & RAG System</p>
+            <div class="server-status">
+                <div class="status-dot"></div>
+                <span id="serverStatus">Checking server...</span>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('upload')">📄 Upload Documents</button>
+            <button class="tab" onclick="showTab('search')">🔍 Search Documents</button>
+            <button class="tab" onclick="showTab('chatbot')">🤖 AI Chatbot</button>
+            <button class="tab" onclick="showTab('stats')">📊 Statistics</button>
+        </div>
+
+        <div class="content">
+            <!-- Upload Tab -->
+            <div id="upload" class="tab-content active">
+                <h2>Upload Documents</h2>
+                <p>Upload PDF or TXT files to add them to the knowledge base</p>
+                
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()" 
+                     ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                    <div class="upload-icon">📤</div>
+                    <h3>Drag & Drop your file here</h3>
+                    <p>or <strong>browse</strong> to choose a file</p>
+                    <p style="font-size: 14px; color: #666; margin-top: 10px;">Supported: PDF, TXT (Max: 10MB)</p>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept=".pdf,.txt" onchange="handleFileSelect(event)">
+
+                <div id="uploadProgress" class="progress-bar" style="display: none;">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+
+                <div id="uploadMessage"></div>
+
+                <!-- Text Input Section -->
+                <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #e0e0e0;">
+                    <h3>Or paste text directly:</h3>
+                    <textarea id="textInput" class="text-input" placeholder="Paste your document text here..." required></textarea>
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <input type="text" id="fileName" placeholder="Document name" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px;" required>
+                        <input type="text" id="pageUrl" placeholder="Page URL (optional)" style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <button class="btn" onclick="uploadText()">Upload Text</button>
+                </div>
+            </div>
+
+            <!-- Search Tab -->
+            <div id="search" class="tab-content">
+                <h2>Search Documents</h2>
+                <p>Find relevant information from your uploaded documents</p>
+                
+                <input type="text" id="searchQuery" class="search-input" placeholder="Enter your question or search terms...">
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <label>
+                        Max Results:
+                        <input type="number" id="searchLimit" value="5" min="1" max="20" style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                    </label>
+                    <label>
+                        Similarity Threshold:
+                        <input type="number" id="searchThreshold" value="0.4" min="0" max="1" step="0.1" style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                    </label>
+                </div>
+                
+                <button class="btn" onclick="performSearch()">🔍 Search</button>
+                
+                <div id="searchProgress" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Searching through documents...</p>
+                </div>
+                
+                <div id="searchMessage"></div>
+                <div id="searchResults" class="results"></div>
+            </div>
+
+            <!-- Chatbot Tab -->
+            <div id="chatbot" class="tab-content">
+                <h2>🤖 AI Chatbot</h2>
+                <p>Ask questions about your uploaded documents using AI</p>
+                
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message">
+                            <div class="message-content">
+                                <strong>🤖 AI Assistant:</strong> Hello! I'm here to help you find information from your documents. What would you like to know?
+                            </div>
+                            <div class="message-time">Just now</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <div class="chat-input-wrapper">
+                            <input type="text" id="chatInput" class="chat-input" placeholder="Ask me anything about your documents..." onkeypress="handleChatKeyPress(event)">
+                            <button class="chat-send-btn" onclick="sendChatMessage()">📤</button>
+                        </div>
+                        <div class="chat-info">
+                            <small>💡 I'll search through your documents and provide precise answers based on the information available.</small>
+                        </div>
+                    </div>
+                    
+                    <div id="chatProgress" class="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Searching and thinking...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Tab -->
+            <div id="stats" class="tab-content">
+                <h2>System Statistics</h2>
+                <div id="statsContent" class="stats">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading statistics...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000';
+        let currentFile = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServerHealth();
+            loadStats();
+        });
+
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Load stats when stats tab is shown
+            if (tabName === 'stats') {
+                loadStats();
+            }
+        }
+
+        // Server health check
+        async function checkServerHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const health = await response.json();
+                
+                document.getElementById('serverStatus').textContent = 
+                    `Online • ${health.vector_db.points_count} documents • ${health.model}`;
+            } catch (error) {
+                document.getElementById('serverStatus').textContent = 'Server Offline';
+            }
+        }
+
+        // Chatbot functions
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        async function sendChatMessage() {
+            const chatInput = document.getElementById('chatInput');
+            const message = chatInput.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            addChatMessage(message, 'user');
+            chatInput.value = '';
+            
+            // Show loading
+            document.getElementById('chatProgress').style.display = 'block';
+            
+            try {
+                // Call chatbot API
+                const response = await fetch(`${API_BASE}/v1/chatbot`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                const result = await response.json();
+                
+                // Hide loading
+                document.getElementById('chatProgress').style.display = 'none';
+                
+                if (result.success) {
+                    addChatMessage(result.response, 'bot');
+                } else {
+                    addChatMessage('Sorry, I encountered an error while processing your request.', 'bot');
+                }
+                
+            } catch (error) {
+                document.getElementById('chatProgress').style.display = 'none';
+                addChatMessage('Sorry, I encountered an error while connecting to the server.', 'bot');
+            }
+        }
+
+        function addChatMessage(text, sender) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const senderName = sender === 'user' ? '👤 You' : '🤖 AI Assistant';
+            
+            // Format the text to handle bold and bullet points
+            let formattedText = text;
+            
+            // Convert **bold** to <strong>bold</strong>
+            formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Convert • bullet points to proper HTML list
+            if (formattedText.includes('•')) {
+                const lines = formattedText.split('\n');
+                let inList = false;
+                let htmlLines = [];
+                
+                lines.forEach(line => {
+                    if (line.trim().startsWith('•')) {
+                        if (!inList) {
+                            htmlLines.push('<ul>');
+                            inList = true;
+                        }
+                        // Remove the bullet and format
+                        const bulletContent = line.trim().substring(1).trim();
+                        htmlLines.push(`<li>${bulletContent}</li>`);
+                    } else {
+                        if (inList) {
+                            htmlLines.push('</ul>');
+                            inList = false;
+                        }
+                        if (line.trim()) {
+                            htmlLines.push(`<p>${line}</p>`);
+                        }
+                    }
+                });
+                
+                if (inList) {
+                    htmlLines.push('</ul>');
+                }
+                
+                formattedText = htmlLines.join('');
+            } else {
+                // Convert newlines to <br> for non-list content
+                formattedText = formattedText.replace(/\n/g, '<br>');
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <strong>${senderName}:</strong> ${formattedText}
+                </div>
+                <div class="message-time">${time}</div>
+            `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // File handling
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            // Validate file
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            const allowedTypes = ['application/pdf', 'text/plain'];
+            const allowedExtensions = ['.pdf', '.txt'];
+            
+            if (file.size > maxSize) {
+                showMessage('uploadMessage', 'File size must be less than 10MB', 'error');
+                return;
+            }
+            
+            const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+            if (!allowedExtensions.includes(extension)) {
+                showMessage('uploadMessage', 'Only PDF and TXT files are allowed', 'error');
+                return;
+            }
+            
+            currentFile = file;
+            uploadFile();
+        }
+
+        async function uploadFile() {
+            if (!currentFile) return;
+            
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            
+            // Show progress
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('uploadMessage').innerHTML = '';
+            
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                // Progress tracking
+                xhr.upload.addEventListener('progress', function(event) {
+                    if (event.lengthComputable) {
+                        const percentComplete = (event.loaded / event.total) * 100;
+                        document.getElementById('progressFill').style.width = percentComplete + '%';
+                    }
+                });
+                
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        const timestamp = response.document.timestamp; // Already formatted from backend
+                        
+                        showMessage('uploadMessage', 
+                            `✅ Document Saved Successfully!
+                            <br><br>
+                            <strong>📄 Document Details:</strong><br>
+                            • Name: ${response.document.fileName}<br>
+                            • ID: ${response.document.documentId}<br>
+                            • URL: No URL (file upload)<br>
+                            • Chunks: ${response.document.totalChunks}<br>
+                            • Time: ${timestamp}`, 
+                            'success');
+                    } else {
+                        showMessage('uploadMessage', '❌ Upload failed', 'error');
+                    }
+                    document.getElementById('uploadProgress').style.display = 'none';
+                    currentFile = null;
+                    document.getElementById('fileInput').value = '';
+                });
+                
+                xhr.addEventListener('error', function() {
+                    showMessage('uploadMessage', '❌ Upload failed', 'error');
+                    document.getElementById('uploadProgress').style.display = 'none';
+                });
+                
+                xhr.open('POST', `${API_BASE}/upload`);
+                xhr.send(formData);
+                
+            } catch (error) {
+                showMessage('uploadMessage', '❌ Upload failed: ' + error.message, 'error');
+                document.getElementById('uploadProgress').style.display = 'none';
+            }
+        }
+
+        async function uploadText() {
+            const text = document.getElementById('textInput').value.trim();
+            const fileName = document.getElementById('fileName').value.trim();
+            const pageUrl = document.getElementById('pageUrl').value.trim();
+            
+            if (!text) {
+                showMessage('uploadMessage', 'Please enter some text', 'error');
+                return;
+            }
+            
+            if (!fileName) {
+                showMessage('uploadMessage', 'Please enter document name', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/upload/text`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text, fileName, pageUrl })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const pageInfo = result.document.pageUrl ? `URL: ${result.document.pageUrl}` : 'No URL';
+                    const timestamp = result.document.timestamp; // Already formatted from backend
+                    
+                    showMessage('uploadMessage', 
+                        `✅ Document Saved Successfully!
+                        <br><br>
+                        <strong>📄 Document Details:</strong><br>
+                        • Name: ${result.document.fileName}<br>
+                        • ID: ${result.document.documentId}<br>
+                        • ${pageInfo}<br>
+                        • Chunks: ${result.document.totalChunks}<br>
+                        • Time: ${timestamp}`, 
+                        'success');
+                    document.getElementById('textInput').value = '';
+                    document.getElementById('fileName').value = '';
+                    document.getElementById('pageUrl').value = '';
+                } else {
+                    showMessage('uploadMessage', '❌ Upload failed: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('uploadMessage', '❌ Upload failed: ' + error.message, 'error');
+                document.getElementById('uploadProgress').style.display = 'none';
+            }
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('searchQuery').value.trim();
+            const limit = parseInt(document.getElementById('searchLimit').value);
+            const threshold = parseFloat(document.getElementById('searchThreshold').value);
+            
+            if (!query) {
+                showMessage('searchMessage', 'Please enter a search query', 'error');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('searchProgress').style.display = 'block';
+            document.getElementById('searchMessage').innerHTML = '';
+            document.getElementById('searchResults').innerHTML = '';
+            
+            try {
+                const response = await fetch(`${API_BASE}/v1/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        limit: limit,
+                        score_threshold: threshold
+                    })
+                });
+                
+                const result = await response.json();
+                
+                document.getElementById('searchProgress').style.display = 'none';
+                
+                if (result.data && result.data.length > 0) {
+                    displaySearchResults(result);
+                } else {
+                    showMessage('searchMessage', `No results found for "${query}"`, 'info');
+                }
+                
+            } catch (error) {
+                document.getElementById('searchProgress').style.display = 'none';
+                showMessage('searchMessage', '❌ Search failed: ' + error.message, 'error');
+            }
+        }
+
+        function displaySearchResults(result) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            let html = `
+                <div class="message info">
+                    📊 Found ${result.results_count} results for "${result.query}"
+                </div>
+            `;
+            
+            // Display grouped results if available
+            if (result.groupedResults && Object.keys(result.groupedResults).length > 0) {
+                html += '<div class="grouped-results"><h3>📋 Grouped by Company & Document</h3>';
+                
+                Object.entries(result.groupedResults).forEach(([key, chunks]) => {
+                    const [companyName, documentName] = key.split('|');
+                    html += `
+                        <div class="group-section">
+                            <h4>🏢 ${companyName} • 📄 ${documentName}</h4>
+                            <p class="group-info">Found ${chunks.length} chunks from this document</p>
+                            <div class="group-chunks">
+                    `;
+                    
+                    chunks.forEach((chunk, index) => {
+                        const score = (chunk.score * 100).toFixed(1);
+                        const scoreColor = chunk.score >= 0.8 ? '#4caf50' : chunk.score >= 0.6 ? '#ff9800' : '#f44336';
+                        
+                        html += `
+                            <div class="result-item">
+                                <div class="result-header">
+                                    <div>
+                                        <span class="score" style="background: ${scoreColor}">${score}% match</span>
+                                        <small style="margin-left: 10px; color: #666;">Chunk ${chunk.metadata?.chunkIndex || index + 1}</small>
+                                    </div>
+                                </div>
+                                <div class="result-text">
+                                    ${highlightText(chunk.text, result.query)}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            } else {
+                // Display individual results (original behavior)
+                result.data.forEach((item, index) => {
+                    const score = (item.score * 100).toFixed(1);
+                    const scoreColor = item.score >= 0.8 ? '#4caf50' : item.score >= 0.6 ? '#ff9800' : '#f44336';
+                    
+                    // Extract company and document names from metadata
+                    const companyName = item.metadata?.companyName || item.metadata?.organization_name || 'Unknown';
+                    const documentName = item.metadata?.documentName || item.metadata?.document_name || 'Unknown';
+                    const chunkIndex = item.metadata?.chunkIndex || index + 1;
+                    
+                    const metadata = `🏢 ${companyName} • 📄 ${documentName} • Chunk ${chunkIndex}`;
+                    
+                    html += `
+                        <div class="result-item">
+                            <div class="result-header">
+                                <div>
+                                    <span class="score" style="background: ${scoreColor}">${score}% match</span>
+                                    <small style="margin-left: 10px; color: #666;">${metadata}</small>
+                                </div>
+                            </div>
+                            <div class="result-text">
+                                ${highlightText(item.text, result.query)}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        function highlightText(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        async function loadStats() {
+            const statsDiv = document.getElementById('statsContent');
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const health = await response.json();
+                
+                const html = `
+                    <div class="stats">
+                        <h3>🏥 System Health</h3>
+                        <div class="stat-item">
+                            <span>Status:</span>
+                            <span style="color: ${health.status === 'ok' ? '#4caf50' : '#ff9800'}">${health.status}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Model:</span>
+                            <span>${health.model}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Dimensions:</span>
+                            <span>${health.dimensions}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Service:</span>
+                            <span>${health.service}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stats">
+                        <h3>🗄️ Vector Database</h3>
+                        <div class="stat-item">
+                            <span>Service:</span>
+                            <span>${health.vector_db.service}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Collection:</span>
+                            <span>${health.vector_db.collection}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Documents:</span>
+                            <span style="color: #1976d2; font-weight: 600;">${health.vector_db.points_count}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Status:</span>
+                            <span style="color: ${health.vector_db.is_initialized ? '#4caf50' : '#f44336'}">
+                                ${health.vector_db.is_initialized ? 'Ready' : 'Not Ready'}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="stats">
+                        <h3>📄 Document Processor</h3>
+                        <div class="stat-item">
+                            <span>Chunk Size:</span>
+                            <span>${health.document_processor.chunkSize} words</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Chunk Overlap:</span>
+                            <span>${health.document_processor.chunkOverlap} words</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Supported Formats:</span>
+                            <span>${health.document_processor.supportedFormats.join(', ')}</span>
+                        </div>
+                    </div>
+                `;
+                
+                statsDiv.innerHTML = html;
+                
+            } catch (error) {
+                statsDiv.innerHTML = `
+                    <div class="message error">
+                        ❌ Failed to load statistics: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="message ${type}">${message}</div>`
+            if (type === 'success') {
+                setTimeout(() => {
+                    element.innerHTML = '';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
