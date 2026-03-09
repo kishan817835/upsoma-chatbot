@@ -2,7 +2,7 @@
 (function() {
     'use strict';
     let config = {
-        apiUrl: 'http://localhost:3000',
+        apiUrl: 'https://upsoma-chatbot-1.onrender.com',
         position: 'bottom-right',
         theme: 'blue',
         title: 'AI Assistant',
