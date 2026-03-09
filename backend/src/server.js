@@ -560,6 +560,29 @@ app.get('/v1/vector-stats', async (c) => {
   }
 });
 
+// Dashboard endpoint - serve the HTML dashboard
+app.get('/dashboard', async (c) => {
+  try {
+    const fs = require('fs').promises;
+    const path = require('path');
+    const htmlPath = path.join(__dirname, '..', 'Dashboard', 'index.html');
+    const html = await fs.readFile(htmlPath, 'utf8');
+    
+    // Replace localhost with current server URL
+    const serverUrl = `${c.req.protocol}://${c.req.header('host')}`;
+    const updatedHtml = html.replace('http://localhost:3000', serverUrl);
+    
+    return c.html(updatedHtml);
+  } catch (error) {
+    return c.json({
+      error: {
+        message: 'Dashboard not found',
+        type: 'not_found_error'
+      }
+    }, 404);
+  }
+});
+
 // Root endpoint
 app.get('/', (c) => {
   return c.json({
