@@ -1,8 +1,6 @@
 
 (function() {
     'use strict';
-    
-    // Widget configuration
     let config = {
         apiUrl: 'http://localhost:3000',
         position: 'bottom-right',
@@ -13,19 +11,14 @@
         zIndex: 999999
     };
     
-    // Widget state
     let isOpen = false;
     let isLoading = false;
     let widgetContainer = null;
-    
-    // Create widget HTML and CSS
     function createWidget() {
-        // Remove existing widget if any
         if (widgetContainer) {
             widgetContainer.remove();
         }
         
-        // Create main container
         widgetContainer = document.createElement('div');
         widgetContainer.id = 'ai-chat-widget-complete';
         widgetContainer.innerHTML = `
