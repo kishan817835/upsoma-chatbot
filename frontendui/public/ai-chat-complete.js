@@ -25,7 +25,7 @@
             <div class="ai-chat-container">
                 <!-- Chat Toggle Button -->
                 <button class="ai-chat-toggle-btn" id="aiChatToggle">
-                    <img src="./frontendui/public/chatbot_img.png" alt="Chat Bot" style="height:110px;">
+                    <img src="./chatbot_img.png" alt="Chat Bot" style="height:110px;">
                     <span class="ai-chat-badge">💬</span>
                 </button>
 
@@ -34,7 +34,7 @@
                     <!-- Chat Header -->
                     <div class="ai-chat-header">
                         <div class="ai-header-content">
-                            <h3><img src="./frontendui/public/chatbubble.png" alt="AI" style="height:20px; width:20px; margin-right:8px; vertical-align:middle;">${config.title}</h3>
+                            <h3><img src="./chatbubble.png" alt="AI" style="height:20px; width:20px; margin-right:8px; vertical-align:middle;">${config.title}</h3>
                             <span class="ai-status-indicator"></span>
                         </div>
                         <button class="ai-close-btn" id="aiChatClose">×</button>
@@ -45,7 +45,7 @@
                         <div class="ai-message ai-bot-message">
                             <div class="ai-message-content">
                                 <div class="ai-sender-name">
-                                    <strong><img src="./frontendui/public/chatbubble.png" alt="AI" style="height:16px; width:16px; margin-right:5px; vertical-align:middle;"> ${config.title}</strong>
+                                    <strong><img src="./chatbubble.png" alt="AI" style="height:16px; width:16px; margin-right:5px; vertical-align:middle;"> ${config.title}</strong>
                                 </div>
                                 <div class="ai-message-text">${config.welcomeMessage}</div>
                             </div>
@@ -636,7 +636,7 @@
         messageDiv.innerHTML = `
             <div class="ai-message-content">
                 <div class="ai-sender-name">
-                    <strong>${sender === 'user' ? '👤 You' : `<img src="./frontendui/public/chatbubble.png" alt="AI" style="height:16px; width:16px; margin-right:5px; vertical-align:middle;"> ${config.title}`}</strong>
+                    <strong>${sender === 'user' ? '👤 You' : `<img src="./chatbubble.png" alt="AI" style="height:16px; width:16px; margin-right:5px; vertical-align:middle;"> ${config.title}`}</strong>
                 </div>
                 <div class="ai-message-text">${formatMessage(text)}</div>
             </div>
