@@ -13,7 +13,7 @@ const app = new Hono();
 
 // Enable CORS for all routes
 app.use('/*', cors({
-  origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['http://localhost:4200', 'http://127.0.0.1:4200'],
+  origin: '*', // Allow all origins for development
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }));
