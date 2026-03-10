@@ -5,6 +5,7 @@ const { cors } = require('hono/cors');
 const { SimpleEmbeddingService } = require('./services/simpleEmbeddingService');
 const { VectorService } = require('./services/vectorService');
 const { DocumentService } = require('./services/documentService');
+const { ConversationContextService } = require('./services/conversationContextService');
 const multer = require('multer');
 const fs = require('fs').promises;
 
@@ -20,6 +21,7 @@ app.use('/*', cors({
 const embeddingService = new SimpleEmbeddingService();
 const vectorService = new VectorService();
 const documentService = new DocumentService();
+const conversationService = new ConversationContextService();
 
 // Configure multer for file uploads
 const upload = multer({
@@ -255,7 +257,7 @@ app.post('/upload/text', async (c) => {
 app.post('/v1/chatbot', async (c) => {
   try {
     const body = await c.req.json();
-    const { message } = body;
+    const { message, sessionId = 'default' } = body;
     
     if (!message || typeof message !== 'string') {
       return c.json({
@@ -267,26 +269,50 @@ app.post('/v1/chatbot', async (c) => {
       }, 400);
     }
     
-    // Step 1: Generate embedding for user message
-    const queryEmbeddings = await embeddingService.generateEmbeddings([message]);
+    // Add user message to conversation history
+    conversationService.addMessage(sessionId, message, 'user');
+    
+    // Get contextual query based on conversation history
+    const contextualQuery = conversationService.getContextualQuery(sessionId, message);
+    console.log(`🔍 Original query: "${message}"`);
+    console.log(`🔍 Contextual query: "${contextualQuery}"`);
+    
+    // Step 1: Generate embedding for contextual query
+    const queryEmbeddings = await embeddingService.generateEmbeddings([contextualQuery]);
     const queryEmbedding = queryEmbeddings[0].embedding;
     
     // Step 2: Search in vector database with fixed parameters
-    console.log(`🔍 Searching for: "${message}"`);
+    console.log(`🔍 Searching for: "${contextualQuery}"`);
     const searchResults = await vectorService.searchEmbeddings(queryEmbedding, 3, 0.3);
     console.log(`📊 Found ${searchResults.data.length} chunks`);
     
     if (searchResults.data.length === 0) {
-      console.log(`❌ No chunks found for message: "${message}"`);
+      console.log(`❌ No chunks found for query: "${contextualQuery}"`);
+      
+      // Check if this is a follow-up query and provide fallback suggestions
+      const isFollowUp = conversationService.isFollowUpQuery(sessionId, message);
+      const suggestions = conversationService.getFallbackSuggestions(sessionId, message);
+      
+      let response = "I don't have information about that in my knowledge base.";
+      
+      if (isFollowUp && suggestions.length > 0) {
+        response = `I don't have specific information about "${message}", but I found information about related topics: ${suggestions.map(s => s.text).join(', ')}. Would you like me to search for any of these instead?`;
+      }
+      
+      // Add assistant response to conversation history
+      conversationService.addMessage(sessionId, response, 'assistant');
+      
       return c.json({
         success: true,
-        response: "I don't have information about that in my knowledge base.",
-        chunks_found: 0
+        response: response,
+        chunks_found: 0,
+        contextual_query: contextualQuery !== message ? contextualQuery : null,
+        suggestions: suggestions
       });
     }
     
     // Step 3: Check if company names match (if company mentioned in query) - TEMPORARILY DISABLED FOR TESTING
-    const extractedCompany = extractCompanyFromQuery(message);
+    const extractedCompany = extractCompanyFromQuery(contextualQuery);
     let filteredResults = searchResults.data;
     
     console.log(`🏢 Extracted company: "${extractedCompany}"`);
@@ -310,22 +336,30 @@ app.post('/v1/chatbot', async (c) => {
     }
     */
     
-    // Step 4: Prepare context for LLM (retrieved chunks)
+    // Step 4: Prepare context for LLM (retrieved chunks + conversation context)
     const retrievedChunks = filteredResults.map(result => result.text);
-    const context = retrievedChunks.join('\n\n');
+    const conversationContext = conversationService.getLLMContext(sessionId);
+    const context = retrievedChunks.join('\n\n') + conversationContext;
+    
     console.log(`📝 Retrieved ${retrievedChunks.length} chunks for LLM processing`);
+    console.log(`💬 Added conversation context: ${conversationContext.length > 0 ? 'Yes' : 'No'}`);
     
     // Step 5: Send to Sarvam AI LLM for smart response generation
     console.log(`🤖 Sending to LLM for context understanding and response generation`);
     const sarvamResponse = await callSarvamAI(message, context);
     console.log(`✅ LLM generated response: ${sarvamResponse.substring(0, 100)}...`);
     
+    // Add assistant response to conversation history
+    conversationService.addMessage(sessionId, sarvamResponse, 'assistant');
+    
     return c.json({
       success: true,
       response: sarvamResponse,
       chunks_found: filteredResults.length,
+      contextual_query: contextualQuery !== message ? contextualQuery : null,
       processing_flow: {
         user_query: message,
+        contextual_query: contextualQuery,
         embedding_created: true,
         vector_search: {
           limit: 3,
@@ -333,6 +367,7 @@ app.post('/v1/chatbot', async (c) => {
           chunks_retrieved: filteredResults.length
         },
         llm_processing: true,
+        conversation_context_used: conversationContext.length > 0,
         final_response: sarvamResponse
       }
     });
@@ -651,7 +686,7 @@ async function startServer() {
     console.log('\n🚀 Starting Windsurf Chatbot API v1.0.0');
     console.log(`📍 Port: ${port}`);
     console.log(`🤖 Model: Xenova/all-MiniLM-L6-v2 (384 dimensions)`);
-    console.log(`🗄️  Vector DB: Qdrant Cloud`);
+    console.log(`🗄️  Vector DB: Zilliz Cloud`);
     console.log(`📄 File Upload: PDF & TXT supported`);
     
     // Ensure uploads directory exists

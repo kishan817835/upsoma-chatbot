@@ -614,7 +614,7 @@
                 const health = await response.json();
                 
                 document.getElementById('serverStatus').textContent = 
-                    `Online • ${health.vector_db.points_count} documents • ${health.model}`;
+                    `Online • ${health.vector_db.points_count} documents • ${health.model} • Zilliz Cloud`;
             } catch (error) {
                 document.getElementById('serverStatus').textContent = 'Server Offline';
             }
@@ -1049,7 +1049,7 @@
                         <h3>🗄️ Vector Database</h3>
                         <div class="stat-item">
                             <span>Service:</span>
-                            <span>${health.vector_db.service}</span>
+                            <span>Zilliz Cloud</span>
                         </div>
                         <div class="stat-item">
                             <span>Collection:</span>

@@ -14,6 +14,7 @@ export class ChatWidgetComponent {
   messages: Array<{text: string, sender: 'user' | 'bot', time: string}> = [];
   currentMessage = '';
   isLoading = false;
+  sessionId = 'user-' + Math.random().toString(36).substr(2, 9); // Generate unique session ID
 
   private readonly API_BASE = 'http://localhost:3000';
   config = {
@@ -70,7 +71,10 @@ export class ChatWidgetComponent {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message: userMessage })
+        body: JSON.stringify({ 
+          message: userMessage,
+          sessionId: this.sessionId 
+        })
       });
 
       const result = await response.json();
@@ -79,8 +83,20 @@ export class ChatWidgetComponent {
       this.removeTypingIndicator();
 
       if (result.success) {
+        let botResponse = result.response;
+        
+        // Add contextual query info if available
+        if (result.contextual_query && result.contextual_query !== userMessage) {
+          botResponse += `\n\n*(Searched for: "${result.contextual_query}")*`;
+        }
+        
+        // Add suggestions if available
+        if (result.suggestions && result.suggestions.length > 0) {
+          botResponse += `\n\n💡 *You might also be interested in: ${result.suggestions.map((s: any) => s.text).join(', ')}*`;
+        }
+
         this.messages.push({
-          text: result.response,
+          text: botResponse,
           sender: 'bot',
           time: this.getCurrentTime()
         });

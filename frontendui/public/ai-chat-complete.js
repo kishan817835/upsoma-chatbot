@@ -14,6 +14,7 @@
     let isOpen = false;
     let isLoading = false;
     let widgetContainer = null;
+    let sessionId = 'user-' + Math.random().toString(36).substr(2, 9); // Generate unique session ID
     function createWidget() {
         if (widgetContainer) {
             widgetContainer.remove();
@@ -602,7 +603,10 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ message: message })
+                body: JSON.stringify({ 
+                    message: message,
+                    sessionId: sessionId 
+                })
             });
 
             const result = await response.json();
@@ -611,7 +615,19 @@
             removeTypingIndicator();
 
             if (result.success) {
-                addMessage(result.response, 'bot');
+                let botResponse = result.response;
+                
+                // Add contextual query info if available
+                if (result.contextual_query && result.contextual_query !== message) {
+                    botResponse += `\n\n*(Searched for: "${result.contextual_query}")*`;
+                }
+                
+                // Add suggestions if available
+                if (result.suggestions && result.suggestions.length > 0) {
+                    botResponse += `\n\n💡 *You might also be interested in: ${result.suggestions.map(s => s.text).join(', ')}*`;
+                }
+                
+                addMessage(botResponse, 'bot');
             } else {
                 addMessage('Sorry, I encountered an error while processing your request.', 'bot');
             }
