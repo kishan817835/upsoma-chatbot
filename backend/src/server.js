@@ -257,7 +257,7 @@ app.post('/upload/text', async (c) => {
 app.post('/v1/chatbot', async (c) => {
   try {
     const body = await c.req.json();
-    const { message, sessionId = 'default' } = body;
+    const { message, sessionId = 'default', search_params = {} } = body;
     
     if (!message || typeof message !== 'string') {
       return c.json({
@@ -269,6 +269,10 @@ app.post('/v1/chatbot', async (c) => {
       }, 400);
     }
     
+    // Use custom search params or defaults
+    const searchLimit = search_params.limit || 5;
+    const scoreThreshold = search_params.score_threshold || 0.4;
+    
     // Add user message to conversation history
     conversationService.addMessage(sessionId, message, 'user');
     
@@ -276,14 +280,15 @@ app.post('/v1/chatbot', async (c) => {
     const contextualQuery = conversationService.getContextualQuery(sessionId, message);
     console.log(`🔍 Original query: "${message}"`);
     console.log(`🔍 Contextual query: "${contextualQuery}"`);
+    console.log(`📊 Search params: limit=${searchLimit}, threshold=${scoreThreshold}`);
     
     // Step 1: Generate embedding for contextual query
     const queryEmbeddings = await embeddingService.generateEmbeddings([contextualQuery]);
     const queryEmbedding = queryEmbeddings[0].embedding;
     
-    // Step 2: Search in vector database with fixed parameters
+    // Step 2: Search in vector database with custom parameters
     console.log(`🔍 Searching for: "${contextualQuery}"`);
-    const searchResults = await vectorService.searchEmbeddings(queryEmbedding, 3, 0.3);
+    const searchResults = await vectorService.searchEmbeddings(queryEmbedding, searchLimit, scoreThreshold);
     console.log(`📊 Found ${searchResults.data.length} chunks`);
     
     if (searchResults.data.length === 0) {
@@ -307,7 +312,11 @@ app.post('/v1/chatbot', async (c) => {
         response: response,
         chunks_found: 0,
         contextual_query: contextualQuery !== message ? contextualQuery : null,
-        suggestions: suggestions
+        suggestions: suggestions,
+        search_params: {
+          limit: searchLimit,
+          score_threshold: scoreThreshold
+        }
       });
     }
     
@@ -336,13 +345,14 @@ app.post('/v1/chatbot', async (c) => {
     }
     */
     
-    // Step 4: Prepare context for LLM (retrieved chunks + conversation context)
+    // Step 4: Combine ALL chunks for LLM context
     const retrievedChunks = filteredResults.map(result => result.text);
     const conversationContext = conversationService.getLLMContext(sessionId);
     const context = retrievedChunks.join('\n\n') + conversationContext;
     
     console.log(`📝 Retrieved ${retrievedChunks.length} chunks for LLM processing`);
     console.log(`💬 Added conversation context: ${conversationContext.length > 0 ? 'Yes' : 'No'}`);
+    console.log(`📝 Combined context length: ${context.length} characters`);
     
     // Step 5: Send to Sarvam AI LLM for smart response generation
     console.log(`🤖 Sending to LLM for context understanding and response generation`);
@@ -357,17 +367,22 @@ app.post('/v1/chatbot', async (c) => {
       response: sarvamResponse,
       chunks_found: filteredResults.length,
       contextual_query: contextualQuery !== message ? contextualQuery : null,
+      search_params: {
+        limit: searchLimit,
+        score_threshold: scoreThreshold
+      },
       processing_flow: {
         user_query: message,
         contextual_query: contextualQuery,
         embedding_created: true,
         vector_search: {
-          limit: 3,
-          score_threshold: 0.3,
+          limit: searchLimit,
+          score_threshold: scoreThreshold,
           chunks_retrieved: filteredResults.length
         },
         llm_processing: true,
         conversation_context_used: conversationContext.length > 0,
+        context_combined: true,
         final_response: sarvamResponse
       }
     });
@@ -589,6 +604,46 @@ app.get('/v1/vector-stats', async (c) => {
     return c.json({
       error: {
         message: 'Failed to get vector database stats',
+        type: 'server_error'
+      }
+    }, 500);
+  }
+});
+
+// Delete all data from Zilliz
+app.delete('/v1/delete-all', async (c) => {
+  try {
+    console.log('🗑️ Deleting all data from Zilliz...');
+    
+    // Check if collection exists
+    const collections = await vectorService.client.listCollections();
+    const exists = collections.collection_names.includes('embeddings');
+    
+    if (!exists) {
+      return c.json({
+        success: true,
+        message: 'No collection to delete'
+      });
+    }
+    
+    // Drop the entire collection
+    await vectorService.client.dropCollection({
+      collection_name: 'embeddings'
+    });
+    
+    console.log('✅ Successfully deleted all data from Zilliz');
+    
+    return c.json({
+      success: true,
+      message: 'All data deleted successfully from Zilliz database'
+    });
+    
+  } catch (error) {
+    console.error('❌ Failed to delete all data:', error);
+    return c.json({
+      success: false,
+      error: {
+        message: error.message,
         type: 'server_error'
       }
     }, 500);

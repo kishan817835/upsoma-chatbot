@@ -1065,6 +1065,11 @@
                                 ${health.vector_db.is_initialized ? 'Ready' : 'Not Ready'}
                             </span>
                         </div>
+                        <div class="stat-item" style="margin-top: 20px;">
+                            <button onclick="deleteAllData()" style="background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: 600;">
+                                🗑️ Delete All Data
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="stats">
@@ -1102,6 +1107,32 @@
                 setTimeout(() => {
                     element.innerHTML = '';
                 }, 5000);
+            }
+        }
+
+        async function deleteAllData() {
+            if (!confirm('⚠️ Are you sure you want to delete ALL data from Zilliz database? This action cannot be undone!')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/v1/delete-all`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('uploadMessage', '✅ All data deleted successfully from Zilliz database!', 'success');
+                    // Reload stats after 2 seconds
+                    setTimeout(() => {
+                        loadStats();
+                    }, 2000);
+                } else {
+                    showMessage('uploadMessage', `❌ Failed to delete data: ${result.error?.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showMessage('uploadMessage', `❌ Error deleting data: ${error.message}`, 'error');
             }
         }
     </script>
