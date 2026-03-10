@@ -605,7 +605,11 @@
                 },
                 body: JSON.stringify({ 
                     message: message,
-                    sessionId: sessionId 
+                    sessionId: sessionId,
+                    search_params: {
+                        limit: 5,
+                        score_threshold: 0.4
+                    }
                 })
             });
 

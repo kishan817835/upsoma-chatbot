@@ -73,7 +73,11 @@ export class ChatWidgetComponent {
         },
         body: JSON.stringify({ 
           message: userMessage,
-          sessionId: this.sessionId 
+          sessionId: this.sessionId,
+          search_params: {
+            limit: 5,
+            score_threshold: 0.4
+          }
         })
       });
 
